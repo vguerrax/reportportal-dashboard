@@ -1,0 +1,118 @@
+{
+  "description": "Dashboard do Serviço integracao-alertas-simas",
+  "owner": "superadmin",
+  "share": true,
+  "name": "job-integracao-alertas-simas-TestRunAPI",
+  "widgets": [
+    {
+      "widgetId": "5cd07e757449fa0001023111",
+      "widgetSize": [
+        6,
+        5
+      ],
+      "widgetPosition": [
+        0,
+        0
+      ]
+    },
+    {
+      "widgetId": "5cd07ef17449fa0001023114",
+      "widgetSize": [
+        6,
+        5
+      ],
+      "widgetPosition": [
+        6,
+        0
+      ]
+    },
+    {
+      "widgetId": "5cd07f507449fa0001023117",
+      "widgetSize": [
+        6,
+        4
+      ],
+      "widgetPosition": [
+        0,
+        5
+      ]
+    },
+    {
+      "widgetId": "5cd07f847449fa0001023119",
+      "widgetSize": [
+        6,
+        4
+      ],
+      "widgetPosition": [
+        6,
+        5
+      ]
+    },
+    {
+      "widgetId": "5cd080017449fa000102311b",
+      "widgetSize": [
+        7,
+        4
+      ],
+      "widgetPosition": [
+        0,
+        9
+      ]
+    },
+    {
+      "widgetId": "5cd080517449fa000102311d",
+      "widgetSize": [
+        5,
+        4
+      ],
+      "widgetPosition": [
+        7,
+        9
+      ]
+    },
+    {
+      "widgetId": "5cd080a87449fa000102311f",
+      "widgetSize": [
+        7,
+        5
+      ],
+      "widgetPosition": [
+        0,
+        13
+      ]
+    },
+    {
+      "widgetId": "5cd080e67449fa0001023121",
+      "widgetSize": [
+        5,
+        5
+      ],
+      "widgetPosition": [
+        7,
+        13
+      ]
+    },
+    {
+      "widgetId": "5cd0811d7449fa0001023123",
+      "widgetSize": [
+        12,
+        7
+      ],
+      "widgetPosition": [
+        0,
+        18
+      ]
+    },
+    {
+      "widgetId": "5cd085687449fa000102315a",
+      "widgetSize": [
+        12,
+        5
+      ],
+      "widgetPosition": [
+        0,
+        25
+      ]
+    }
+  ]
+}

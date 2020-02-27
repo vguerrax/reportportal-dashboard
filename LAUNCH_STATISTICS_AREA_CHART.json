@@ -1,0 +1,30 @@
+{
+  "owner": "superadmin",
+  "share": true,
+  "name": "LAUNCH STATISTICS AREA CHART",
+  "content_parameters": {
+    "type": "trends_chart",
+    "gadget": "statistic_trend",
+    "metadata_fields": [
+      "name",
+      "number",
+      "start_time"
+    ],
+    "content_fields": [
+      "statistics$defects$product_bug$PB001",
+      "statistics$defects$automation_bug$AB001",
+      "statistics$defects$system_issue$SI001",
+      "statistics$defects$to_investigate$TI001"
+    ],
+    "itemsCount": 50,
+    "widgetOptions": {
+      "filterName": [
+        "job-integracao-alertas-simas-TestRunAPI"
+      ],
+      "viewMode": [
+        "barMode"
+      ]
+    }
+  },
+  "filter_id": "5cd07e387449fa00010230e1"
+}

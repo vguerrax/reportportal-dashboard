@@ -1,0 +1,299 @@
+#!/usr/local/bin/python3
+
+import requests
+import click
+import json
+import validators
+import sys
+
+# Used for determining if the system is running a new enough python version
+# and should only restrict on our documented minimum versions
+_PY3_MIN = sys.version_info[:2] >= (3, 5)
+_PY_MIN = _PY3_MIN
+if not _PY_MIN:
+    raise SystemExit(
+        'ERROR: ReportPortal Dashboard requires a minimum of Python3 version 3.5. Current version: %s' % ''.join(
+            sys.version.splitlines()))
+
+PROJECT_NAME = ''
+REPORTPORTAL_URL = ''
+JOB_NAME = ''
+API_TOKEN = ''
+
+HEADERS = {'Content-Type': 'Application/json',
+           'Accept': 'application/json',
+           'Authorization': 'bearer ' + API_TOKEN}
+
+
+def create_filter(project_name, job_name):
+    url = REPORTPORTAL_URL + '/api/v1/' + project_name + '/filter'
+    payload = {
+        "elements": [
+            {
+                "description": "Filtro do Job " + job_name,
+                "entities": [
+                    {
+                        "condition": "eq",
+                        "filtering_field": "name",
+                        "value": job_name
+                    }
+                ],
+                "is_link": False,
+                "name": job_name,
+                "selection_parameters": {
+                    "orders": [
+                        {
+                            "is_asc": False,
+                            "sorting_column": "start_time"
+                        },
+                        {
+                            "sorting_column": "number",
+                            "is_asc": False
+                        }
+                    ],
+                    "page_number": 1
+                },
+                "share": True,
+                "type": "launch"
+            }
+        ]
+    }
+    return requests.post(url, data=json.dumps(payload), headers=HEADERS)
+
+
+def create_dashboard(project_name, job_name):
+    url = REPORTPORTAL_URL + '/api/v1/' + project_name + '/dashboard'
+    payload = {
+        "description": "Dashboard do Job " + job_name,
+        "name": job_name,
+        "share": True
+    }
+    return requests.post(url, data=json.dumps(payload), headers=HEADERS)
+
+
+def get_dashboard_by_id(project_name, dashboard_id):
+    url = REPORTPORTAL_URL + '/api/v1/' + project_name + '/dashboard/' + dashboard_id
+    return requests.get(url, headers=HEADERS)
+
+
+def get_widget_by_id(project_name, widget_id):
+    url = REPORTPORTAL_URL + '/api/v1/' + project_name + '/widget/' + widget_id
+    return requests.get(url, headers=HEADERS)
+
+def get_project_settings(project_name,):
+    url = REPORTPORTAL_URL + '/api/v1/' + project_name + '/settings'
+    return requests.get(url, headers=HEADERS).json()
+
+
+def get_filter_by_name(project_name, filter_name):
+    url = REPORTPORTAL_URL + '/api/v1/' + project_name + '/filter?page.size=100'
+    response = requests.get(url, headers=HEADERS)
+    for filter in response.json()['content']:
+        if filter['name'] == filter_name:
+            return filter
+    raise Exception("Filter '{}' not found.".format(filter_name))
+
+
+def get_dashboard_by_name(project_name, dashboard_name):
+    url = REPORTPORTAL_URL + '/api/v1/' + project_name + '/dashboard'
+    response = requests.get(url, headers=HEADERS)
+    for dashboard in response.json():
+        if dashboard['name'] == dashboard_name:
+            return dashboard
+    raise Exception("Dashboard '{}' not found.".format(dashboard_name))
+
+
+def flaky_tests_cases(filter):
+    with open('FLAKY_TESTS_CASES.json') as json_file:
+        widget_json = json.load(json_file)
+    widget_json['name'] = "{0} - {1}".format(filter['name'], widget_json['name'])
+    widget_json['content_parameters']['widgetOptions']['launchNameFilter'][0] = filter['name']
+    widget_json['filter_id'] = ""
+    return widget_json
+
+def chart_content_fields(settings):
+    content_fields = []
+    subtypes = settings['subTypes']
+    content_fields.extend(get_content_filds_from_subtype(subtypes, 'TO_INVESTIGATE'))
+    content_fields.extend(get_content_filds_from_subtype(subtypes, 'AUTOMATION_BUG'))
+    content_fields.extend(get_content_filds_from_subtype(subtypes, 'PRODUCT_BUG'))
+    content_fields.extend(get_content_filds_from_subtype(subtypes, 'SYSTEM_ISSUE'))
+    return content_fields
+    
+def get_content_filds_from_subtype(subtypes, node):
+    content_fields = []
+    for subtype in subtypes[node]:
+        content_field = 'statistics$defects$'
+        content_field += str(subtype['typeRef']).lower()
+        content_field += '$' + subtype['locator']
+        content_fields.append(content_field)
+    return content_fields
+
+def update_default_widget_json(json_filename, filter, content_fields = []):
+    with open(json_filename) as json_file:
+        widget_json = json.load(json_file)
+    widget_json['name'] = "{0} - {1}".format(filter['name'], widget_json['name'])
+    widget_json['content_parameters']['widgetOptions']['filterName'][0] = filter['name']
+    widget_json['filter_id'] = filter['id']
+    remove_fields = []
+    if len(content_fields) > 0:
+        list_content_fields = list(widget_json['content_parameters']['content_fields'])
+        for field in list_content_fields:
+            if 'statistics$defects' in str(field):
+                remove_fields.append(field)
+        for field in remove_fields:
+            list_content_fields.remove(field)
+        list_content_fields.extend(content_fields)
+        widget_json['content_parameters']['content_fields'] = list_content_fields
+    return widget_json
+
+
+def create_widget(project_name, widget_json):
+    url = REPORTPORTAL_URL + '/api/v1/' + project_name + '/widget'
+    response = requests.post(url, data=json.dumps(widget_json), headers=HEADERS)
+    return response
+
+
+def search_widget(project_name, term):
+    url = REPORTPORTAL_URL + '/api/v1/' + project_name + '/widget/shared/search?term=' + term
+    response = requests.get(url, headers=HEADERS)
+    return response
+
+
+def update_widget(project_name, widget_id, widget_json):
+    url = REPORTPORTAL_URL + "/api/v1/" + project_name + '/widget/' + widget_id
+    response = requests.put(url, data=json.dumps(widget_json), headers=HEADERS)
+    return response
+
+
+def update_dashboard(project_name, dashboard_id, widgets_ids: dict):
+    with open("DASHBOARD.json", 'r') as json_file:
+        dashboard = json.load(json_file)
+    print("\tWidgets Added to Dashboard:")
+
+    index = 0
+    for widget_name in widgets_ids:
+        widget_id = widgets_ids[widget_name]
+        response = get_widget_by_id(PROJECT_NAME, widget_id)
+        widget = response.json()
+        dashboard['widgets'][index]['widgetId'] = widget['id']
+        add_widget_json = {"addWidget": ""}
+        add_widget_json['addWidget'] = dashboard['widgets'][index]
+
+        index = index + 1
+        url = REPORTPORTAL_URL + "/api/v1/" + project_name + '/dashboard/' + dashboard_id
+        response = requests.put(url, data=json.dumps(add_widget_json), headers=HEADERS)
+        if response.status_code == 200:
+            print("\t\t{\"name\": %s, \"id\": %s}" % (widget['name'], widget['id']))
+        else:
+            raise Exception(response.json())
+
+
+def validate_url(ctx, param, value):
+    if validators.url(value):
+        return value
+    elif not value:
+        raise click.BadParameter("url is empty".format(value))
+    else:
+        raise click.BadParameter("url '{}' is not valid".format(value))
+
+
+def validate_api_token(ctx, param, value):
+    if validators.uuid(value):
+        return value
+    elif not value:
+        raise click.BadParameter("api token is empty".format(value))
+    else:
+        raise click.BadParameter("api token '{}' is not valid".format(value))
+
+
+def validate_project_name(ctx, param, value):
+    if not value:
+        raise click.BadParameter("project name is empty".format(value))
+    else:
+        return value
+
+
+def validate_job_name(ctx, param, value):
+    if not value:
+        raise click.BadParameter("job name is empty".format(value))
+    else:
+        return value
+
+
+@click.command()
+@click.option('--reportportal-url', required=True, help='ReportPortal URL.', envvar='REPORTPORTAL_URL',
+              callback=validate_url)
+@click.option('--api-token', required=True, help='API Token for ReportPortal', envvar='API_TOKEN',
+              callback=validate_api_token)
+@click.option('--project-name', required=True, help='Project Name in ReportPortal.', envvar='PROJECT_NAME',
+              callback=validate_project_name)
+@click.option('--job-name', required=True, help='Job name in Jenkins.', envvar='JOB_NAME', callback=validate_job_name)
+def main(reportportal_url, api_token, project_name, job_name):
+    """Create Dashboard in ReportPortal."""
+
+    global PROJECT_NAME
+    global JOB_NAME
+    global REPORTPORTAL_URL
+    global API_TOKEN
+    global HEADERS
+
+    PROJECT_NAME = project_name
+    JOB_NAME = job_name
+    REPORTPORTAL_URL = reportportal_url
+    API_TOKEN = api_token
+    HEADERS = {'Content-Type': 'Application/json',
+               'Accept': 'application/json',
+               'Authorization': 'bearer ' + API_TOKEN}
+
+    create_dashboard(PROJECT_NAME, JOB_NAME)
+    create_filter(PROJECT_NAME, JOB_NAME)
+    dashboard = get_dashboard_by_name(PROJECT_NAME, JOB_NAME)
+    filter = get_filter_by_name(PROJECT_NAME, JOB_NAME)
+    content_fields = chart_content_fields(get_project_settings(PROJECT_NAME))
+
+    widgets = {
+        'LAUNCH STATISTICS AREA CHART': update_default_widget_json('LAUNCH_STATISTICS_AREA_CHART.json', filter, content_fields),
+        'LAUNCH STATISTICS BAR CHART': update_default_widget_json('LAUNCH_STATISTICS_BAR_CHART.json', filter),
+        'INVESTIGATED PERCENTAGE OF LAUNCHES': update_default_widget_json('INVESTIGATED_PERCENTAGE_OF_LAUNCHES.json',
+                                                                          filter),
+        'TEST CASES GROWTH TREND CHART': update_default_widget_json('TEST_CASES_GROWTH_TREND_CHART.json', filter),
+        'OVERALL STATISTICS PANEL': update_default_widget_json('OVERALL_STATISTICS_PANEL.json', filter, content_fields),
+        'LAUNCHES DURATION CHART': update_default_widget_json('LAUNCHES_DURATION_CHART.json', filter),
+        'LAUNCH EXECUTION AND ISSUE STATISTICS': update_default_widget_json(
+            'LAUNCH_EXECUTION_AND_ISSUE_STATISTICS.json', filter, content_fields),
+        'FAILED CASES TREND CHART': update_default_widget_json('FAILED_CASES_TREND_CHART.json', filter),
+        'LAUNCH TABLE': update_default_widget_json('LAUNCH_TABLE.json', filter, content_fields),
+        'FLAKY TESTS CASES': flaky_tests_cases(filter)
+    }
+
+    print(PROJECT_NAME + ":" + JOB_NAME)
+    print("\tLoading Widgets:")
+    for widget_name in widgets.keys():
+        response = create_widget(PROJECT_NAME, widgets[widget_name])
+        if response.status_code == 201:
+            widget_id = response.json()["id"]
+        elif response.status_code == 409:
+            widget_id = search_widget(PROJECT_NAME, widgets[widget_name]['name']).json()['content'][0]['id']
+            response = update_widget(PROJECT_NAME, widget_id, widgets[widget_name])
+
+            if response.status_code == 200:
+                widgets[widget_name] = widget_id
+            else:
+                raise Exception(response.json())
+        else:
+            raise Exception(response.json())
+        print("\t\t{\"name\": %s - %s}" % (JOB_NAME, widget_name))
+        widgets[widget_name] = widget_id
+
+    print("\tDashboard:")
+    print("\t\t{\"name\": %s, \"id\": %s}" % (JOB_NAME, dashboard['id']))
+
+    print("\tFilter:")
+    print("\t\t{\"name\": %s, \"id\": %s}" % (JOB_NAME, filter['id']))
+
+    update_dashboard(PROJECT_NAME, dashboard['id'], widgets)
+
+
+if __name__ == '__main__':
+    main()

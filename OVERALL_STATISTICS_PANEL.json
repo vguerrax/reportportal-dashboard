@@ -1,0 +1,36 @@
+{
+  "owner": "superadmin",
+  "share": true,
+  "name": "OVERALL STATISTICS PANEL",
+  "content_parameters": {
+    "type": "statistics_panel",
+    "gadget": "overall_statistics",
+    "metadata_fields": [
+      "name",
+      "number",
+      "start_time"
+    ],
+    "content_fields": [
+      "statistics$executions$total",
+      "statistics$executions$passed",
+      "statistics$executions$failed",
+      "statistics$executions$skipped",
+      "statistics$defects$product_bug$PB001",
+      "statistics$defects$automation_bug$AB001",
+      "statistics$defects$system_issue$SI001",
+      "statistics$defects$no_defect$ND001",
+      "statistics$defects$to_investigate$TI001"
+    ],
+    "itemsCount": 50,
+    "widgetOptions": {
+      "filterName": [
+        "job-integracao-alertas-simas-TestRunAPI"
+      ],
+      "viewMode": [
+        "panel"
+      ],
+      "latest": []
+    }
+  },
+  "filter_id": "5cd07e387449fa00010230e1"
+}

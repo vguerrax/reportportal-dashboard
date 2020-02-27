@@ -1,0 +1,22 @@
+FROM python:3.7.3-slim-stretch
+
+RUN pip install \
+    requests \
+    click \
+    validators
+
+COPY DASHBOARD.json LAUNCH_STATISTICS_AREA_CHART.json LAUNCH_STATISTICS_BAR_CHART.json INVESTIGATED_PERCENTAGE_OF_LAUNCHES.json TEST_CASES_GROWTH_TREND_CHART.json OVERALL_STATISTICS_PANEL.json LAUNCHES_DURATION_CHART.json LAUNCH_EXECUTION_AND_ISSUE_STATISTICS.json FAILED_CASES_TREND_CHART.json LAUNCH_TABLE.json FLAKY_TESTS_CASES.json /reportportal/
+
+COPY dashboard /reportportal/
+
+RUN chmod 500 /reportportal/dashboard
+
+WORKDIR /reportportal
+
+ENV PATH $PATH:/reportportal/
+ENV PROJECT_NAME ""
+ENV REPORTPORTAL_URL ""
+ENV JOB_NAME ""
+ENV API_TOKEN ""
+
+CMD dashboard

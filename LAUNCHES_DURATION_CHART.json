@@ -1,0 +1,28 @@
+{
+  "owner": "superadmin",
+  "share": true,
+  "name": "LAUNCHES DURATION CHART",
+  "content_parameters": {
+    "type": "column_chart",
+    "gadget": "launches_duration_chart",
+    "metadata_fields": [
+      "name",
+      "number",
+      "start_time"
+    ],
+    "content_fields": [
+      "start_time",
+      "end_time",
+      "name",
+      "number",
+      "status"
+    ],
+    "itemsCount": 50,
+    "widgetOptions": {
+      "filterName": [
+        "job-integracao-alertas-simas-TestRunAPI"
+      ]
+    }
+  },
+  "filter_id": "5cd07e387449fa00010230e1"
+}

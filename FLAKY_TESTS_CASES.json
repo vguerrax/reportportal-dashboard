@@ -1,0 +1,20 @@
+{
+  "owner": "superadmin",
+  "share": true,
+  "name": "FLAKY TESTS CASES",
+  "content_parameters": {
+    "type": "table",
+    "gadget": "flaky_test_cases",
+    "metadata_fields": [
+      "name",
+      "start_time"
+    ],
+    "itemsCount": 30,
+    "widgetOptions": {
+      "launchNameFilter": [
+        "job-integracao-alertas-simas-TestRunAPI"
+      ]
+    }
+  },
+  "filter_id": ""
+}
